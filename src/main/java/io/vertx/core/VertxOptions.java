@@ -128,6 +128,20 @@ public class VertxOptions {
    */
   private static final long DEFAULT_WARNING_EXCEPTION_TIME = 5L * 1000 * 1000000;
 
+  
+  /**
+     * default socket transport in netty
+     */
+    public final static String NETTY_TRANSPORT_NIO = "nio";
+    
+  /**
+     * Since 4.0.16, Netty provides the native socket transport for GNU/Linux using JNI
+     * This transport has higher performance and produces less garbage
+     * But multicast not supported
+     */
+    public final static String NETTY_TRANSPORT_EPOLL = "epoll";
+    
+  
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
   private int internalBlockingPoolSize = DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
@@ -143,6 +157,7 @@ public class VertxOptions {
   private EventBusOptions eventBusOptions = new EventBusOptions();
   private AddressResolverOptions addressResolverOptions = new AddressResolverOptions();
   private boolean fileResolverCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;
+  private String nettyTransport = NETTY_TRANSPORT_NIO;
 
   /**
    * Default constructor
@@ -171,6 +186,7 @@ public class VertxOptions {
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
     this.addressResolverOptions = other.addressResolverOptions != null ? new AddressResolverOptions() : null;
     this.fileResolverCachingEnabled = other.fileResolverCachingEnabled;
+    this.nettyTransport = other.nettyTransport;
   }
 
   /**
@@ -673,6 +689,29 @@ public class VertxOptions {
     this.fileResolverCachingEnabled = fileResolverCachingEnabled;
     return this;
   }
+  
+  
+  /**
+   * Get the netty transport to be used.
+   * 
+   * @return the netty transport
+   */
+  public String getNettyTransport() {
+    return nettyTransport;
+  }
+  
+  /**
+   * Set the netty transport to be used while in GNU/Linux, the choices include: nio, epoll
+   * Since 4.0.16, Netty provides the native socket transport for GNU/Linux using JNI - epoll
+   * The epoll transport has higher performance and produces less garbage, but multicast not supported
+   * 
+   * @param nettyTransport
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setNettyTransport(String nettyTransport) {
+    this.nettyTransport = nettyTransport;
+    return this;
+  }
 
   @Override
   public boolean equals(Object o) {
@@ -698,6 +737,8 @@ public class VertxOptions {
     if (addressResolverOptions != null ? !addressResolverOptions.equals(that.addressResolverOptions) : that.addressResolverOptions != null)
       return false;
     if (fileResolverCachingEnabled != that.fileResolverCachingEnabled) return false;
+    if (nettyTransport != null ? !nettyTransport.equals(that.nettyTransport) : that.nettyTransport != null) return false;
+    
     return !(metricsOptions != null ? !metricsOptions.equals(that.metricsOptions) : that.metricsOptions != null);
   }
 
@@ -718,6 +759,7 @@ public class VertxOptions {
     result = 31 * result + (eventBusOptions != null ? eventBusOptions.hashCode() : 0);
     result = 31 * result + (addressResolverOptions != null ? addressResolverOptions.hashCode() : 0);
     result = 31 * result + (int) (warningExceptionTime ^ (warningExceptionTime >>> 32));
+    result = 31 * result + (nettyTransport != null ? nettyTransport.hashCode() : 0);
     return result;
   }
 

@@ -296,7 +296,7 @@ public class ConnectionManager {
       sslHelper.validate(vertx);
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(context.nettyEventLoop());
-      bootstrap.channel(NioSocketChannel.class);
+      bootstrap.channel(vertx.getNettyTransportFactory().chooseSocketChannel());
       connector.connect(this, bootstrap, context, peerHost, ssl, pool.version(), host, port, waiter);
     }
 

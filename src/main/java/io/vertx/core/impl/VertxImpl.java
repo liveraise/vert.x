@@ -19,6 +19,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -120,8 +121,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   final WorkerPool workerPool;
   final WorkerPool internalBlockingPool;
   private final ThreadFactory eventLoopThreadFactory;
-  private final NioEventLoopGroup eventLoopGroup;
-  private final NioEventLoopGroup acceptorEventLoopGroup;
+  private final EventLoopGroup eventLoopGroup;
+  private final EventLoopGroup acceptorEventLoopGroup;
   private final BlockedThreadChecker checker;
   private final boolean haEnabled;
   private final AddressResolver addressResolver;
@@ -133,6 +134,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final int defaultWorkerPoolSize;
   private final long defaultWorkerMaxExecTime;
   private final CloseHooks closeHooks;
+  private NettyTransportFactory nettyTransportFactory;
 
   VertxImpl() {
     this(new VertxOptions());
@@ -147,16 +149,27 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
     }
+    
+    nettyTransportFactory = new NettyTransportFactory();
+    nettyTransportFactory.setNettyTransport(options.getNettyTransport());
     closeHooks = new CloseHooks(log);
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getWarningExceptionTime());
     eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false, options.getMaxEventLoopExecuteTime());
-    eventLoopGroup = new NioEventLoopGroup(options.getEventLoopPoolSize(), eventLoopThreadFactory);
-    eventLoopGroup.setIoRatio(NETTY_IO_RATIO);
+    eventLoopGroup = getNettyTransportFactory().instantiateEventLoopGroup(options.getEventLoopPoolSize(), eventLoopThreadFactory);
+    if(eventLoopGroup instanceof NioEventLoopGroup) {
+      ((NioEventLoopGroup)eventLoopGroup).setIoRatio(NETTY_IO_RATIO);
+    } else if(eventLoopGroup instanceof EpollEventLoopGroup) {
+        ((EpollEventLoopGroup)eventLoopGroup).setIoRatio(NETTY_IO_RATIO);
+    }
     ThreadFactory acceptorEventLoopThreadFactory = new VertxThreadFactory("vert.x-acceptor-thread-", checker, false, options.getMaxEventLoopExecuteTime());
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
     // under a lot of load
-    acceptorEventLoopGroup = new NioEventLoopGroup(1, acceptorEventLoopThreadFactory);
-    acceptorEventLoopGroup.setIoRatio(100);
+    acceptorEventLoopGroup = getNettyTransportFactory().instantiateEventLoopGroup(1, acceptorEventLoopThreadFactory);
+    if(acceptorEventLoopGroup instanceof NioEventLoopGroup) {
+        ((NioEventLoopGroup)acceptorEventLoopGroup).setIoRatio(100);
+      } else if(acceptorEventLoopGroup instanceof EpollEventLoopGroup) {
+          ((EpollEventLoopGroup)acceptorEventLoopGroup).setIoRatio(100);
+      }
 
     metrics = initialiseMetrics(options);
 
@@ -322,6 +335,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   public EventLoopGroup getEventLoopGroup() {
     return eventLoopGroup;
+  }
+  
+  /**
+   * get NettyTransportFactory instance
+   * 
+   * @return NettyTransportFactory instance
+   */
+  public NettyTransportFactory getNettyTransportFactory() {
+    return nettyTransportFactory;
   }
 
   public EventLoopGroup getAcceptorEventLoopGroup() {

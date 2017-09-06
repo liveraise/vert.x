@@ -90,6 +90,9 @@ public class VertxOptionsConverter {
     if (json.getValue("workerPoolSize") instanceof Number) {
       obj.setWorkerPoolSize(((Number)json.getValue("workerPoolSize")).intValue());
     }
+    if(json.getValue("nettyTransport") instanceof String) {
+      obj.setNettyTransport(json.getString("nettyTransport"));
+    }
   }
 
   public static void toJson(VertxOptions obj, JsonObject json) {

@@ -239,6 +239,7 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setFileResolverCachingEnabled(fileResolverCachingEnabled);
     options.setQuorumSize(quorumSize);
     options.setHAGroup(haGroup);
+    options.setNettyTransport(VertxOptions.NETTY_TRANSPORT_NIO);
     options.setMetricsOptions(
         new MetricsOptions().
             setEnabled(metricsEnabled));
@@ -260,6 +261,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(fileResolverCachingEnabled, options.isFileResolverCachingEnabled());
     assertEquals(quorumSize, options.getQuorumSize());
     assertEquals(haGroup, options.getHAGroup());
+    assertEquals(VertxOptions.NETTY_TRANSPORT_NIO, options.getNettyTransport());
     MetricsOptions metricsOptions = options.getMetricsOptions();
     assertNotNull(metricsOptions);
     assertEquals(metricsEnabled, metricsOptions.isEnabled());
@@ -287,6 +289,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(def.getHAGroup(), json.getHAGroup());
     assertEquals(def.getWarningExceptionTime(), json.getWarningExceptionTime());
     assertEquals(def.isFileResolverCachingEnabled(), json.isFileResolverCachingEnabled());
+    assertEquals(def.getNettyTransport(), json.getNettyTransport());
   }
 
   @Test
@@ -309,6 +312,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertFalse(options.isHAEnabled());
     assertEquals(1, options.getQuorumSize());
     assertEquals(VertxOptions.DEFAULT_HA_GROUP, options.getHAGroup());
+    assertEquals(VertxOptions.NETTY_TRANSPORT_NIO, options.getNettyTransport());
     assertNotNull(options.getMetricsOptions());
     assertEquals(5000000000l, options.getWarningExceptionTime());
     int clusterPort = TestUtils.randomPortInt();

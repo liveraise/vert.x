@@ -168,7 +168,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(availableWorkers);
-        bootstrap.channel(NioServerSocketChannel.class);
+        bootstrap.channel(vertx.getNettyTransportFactory().chooseServerSocketChannel());
         sslHelper.validate(vertx);
 
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
